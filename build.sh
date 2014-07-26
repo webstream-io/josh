@@ -2,6 +2,20 @@
 # `./build.sh` generates dist/$VERSION.tar.gz
 # `./build.sh --install` installs into ~/Library/Application Support/Pow/Current
 
+command -v node >/dev/null 2>&1 || {
+  command -v nodejs >/dev/null 2>&1 && {
+    cat <<EOF
+Node.js is installed but node binary is not found. Run following command to resolve this issue.
+
+  sudo update-alternatives --install /usr/bin/node node /usr/bin/nodejs 10
+
+EOF
+    exit 1
+  } || {
+    echo "Please install Node.js first. https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager" >&2; exit 1
+  }
+}
+
 VERSION=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("package.json","utf8")).version); ""')
 ROOT="/tmp/pow-build.$$"
 DIST="$(pwd)/dist"
