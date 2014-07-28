@@ -16,6 +16,9 @@ build = (watch, callback) ->
   coffee.on 'exit', (status) -> callback?() if status is 0
 
 buildTemplates = (callback) ->
+  exec = require('child_process').exec;
+  exec("mkdir -p lib/templates/http_server")
+  exec("mkdir -p lib/templates/installer")
   eco = require 'eco'
   compile = (name) ->
     (callback) ->
