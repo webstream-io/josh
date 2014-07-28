@@ -1,6 +1,4 @@
-#!/bin/sh -e
-# `./build.sh` generates dist/$VERSION.tar.gz
-# `./build.sh --install` installs into ~/Library/Application Support/Pow/Current
+#!/bin/bash -e
 
 command -v node >/dev/null 2>&1 || {
   command -v nodejs >/dev/null 2>&1 && {
@@ -17,34 +15,14 @@ EOF
 }
 
 VERSION=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("package.json","utf8")).version); ""')
-ROOT="/tmp/pow-build.$$"
-DIST="$(pwd)/dist"
+TMP_ROOT="/tmp/pow-build.$$"
 
+npm install
+command -v cake >/dev/null 2>&1 || PATH=`npm root`/.bin:$PATH
 cake build
 
-mkdir -p "$ROOT/$VERSION/node_modules"
-cp -R package.json bin lib libexec "$ROOT/$VERSION"
-cp Cakefile "$ROOT/$VERSION"
-cd "$ROOT/$VERSION"
+mkdir -p "$TMP_ROOT/node_modules"
+cp -R package.json bin lib libexec "$TMP_ROOT"
+cp Cakefile "$TMP_ROOT"
+cd "$TMP_ROOT"
 BUNDLE_ONLY=1 npm install --production &>/dev/null
-cp `which node` bin
-
-if [ "$1" == "--install" ]; then
-  POW_ROOT="$HOME/Library/Application Support/Pow"
-  rm -fr "$POW_ROOT/Versions/9999.0.0"
-  mkdir -p "$POW_ROOT/Versions"
-  cp -R "$ROOT/$VERSION" "$POW_ROOT/Versions/9999.0.0"
-  rm -f "$POW_ROOT/Current"
-  cd "$POW_ROOT"
-  ln -s Versions/9999.0.0 Current
-  echo "$POW_ROOT/Versions/9999.0.0"
-else
-  cd "$ROOT"
-  tar czf "$VERSION.tar.gz" "$VERSION"
-  mkdir -p "$DIST"
-  cd "$DIST"
-  mv "$ROOT/$VERSION.tar.gz" "$DIST"
-  echo "$DIST/$VERSION.tar.gz"
-fi
-
-rm -fr "$ROOT"

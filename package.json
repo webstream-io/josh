@@ -1,12 +1,12 @@
-{ "name": "pow"
-, "description": "Zero-configuration Rack server for Mac OS X"
-, "version": "0.4.3"
-, "author": "Sam Stephenson"
+{ "name": "josh"
+, "description": "Zero-configuration Rack server for *nix"
+, "version": "0.1.0"
+, "author": ""
 , "repository":
   { "type": "git"
-  , "url": "http://github.com/sstephenson/pow.git"
+  , "url": "https://github.com/webstream-io/josh.git"
   }
-, "bin": { "pow": "./bin/pow" }
+, "bin": { "josh": "./bin/josh" }
 , "main": "./lib/index.js"
 , "dependencies": {
     "async": "0.1.22"
