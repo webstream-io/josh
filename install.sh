@@ -18,6 +18,10 @@ sudo mkdir -p "$JOSH_HOSTS_ROOT"
 sudo mkdir -p "$JOSH_LOG_ROOT"
 sudo chmod o+w "$JOSH_HOSTS_ROOT"
 
+# install NSS service
+sudo cp ext/libnss_josh.so.2 /lib
+sudo sed -i -r -e '/\bjosh\b/ !s/^hosts:(.+)\bdns\b/hosts:\1josh dns/' /etc/nsswitch.conf
+
 # If josh is already installed, remove it first.
 sudo rm -rf "$JOSH_INSTALL_ROOT"
 
@@ -116,4 +120,5 @@ fi
 # All done!
 
 echo "*** Installed"
-print_troubleshooting_instructions
+echo "You may need to restart your browser for it to start recognising .dev domains."
+# print_troubleshooting_instructions

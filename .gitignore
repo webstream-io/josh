@@ -4,3 +4,4 @@
 /node_modules/
 !/node_modules/dnsserver
 /lib
+/ext/nss_josh.o
