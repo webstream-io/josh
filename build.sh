@@ -14,6 +14,11 @@ EOF
   }
 }
 
+command -v npm >/dev/null 2>&1 || {
+  echo "Please install npm first." >&2
+  exit 1
+}
+
 VERSION=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("package.json","utf8")).version); ""')
 TMP_ROOT="/tmp/pow-build.$$"
 

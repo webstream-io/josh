@@ -7,7 +7,7 @@ util = require "util"
 
 # Set the process's title to `pow` so it's easier to find in `ps`,
 # `top`, Activity Monitor, and so on.
-process.title = "pow"
+process.title = "josh"
 
 # Print valid command-line arguments and exit with a non-zero exit
 # code if invalid arguments are passed to the `pow` binary.

@@ -22,6 +22,9 @@ sudo chmod o+w "$JOSH_HOSTS_ROOT"
 sudo cp ext/libnss_josh.so.2 /lib
 sudo sed -i -r -e '/\bjosh\b/ !s/^hosts:(.+)\bdns\b/hosts:\1josh dns/' /etc/nsswitch.conf
 
+# install upstart service
+cat initscripts/upstart.conf | m4 -D__JOSH_BIN__=$JOSH_BIN | sudo tee /etc/init/josh.conf > /dev/null
+
 # If josh is already installed, remove it first.
 sudo rm -rf "$JOSH_INSTALL_ROOT"
 
@@ -34,17 +37,14 @@ cd "$HOME"
 [[ -a .josh ]] || ln -s "$JOSH_HOSTS_ROOT" .josh
 
 echo "*** Installing system configuration files as root..."
-sudo node "$JOSH_BIN" --install-system
+sudo "$JOSH_BIN" --install-system
 
 # install libnss_josh here
 # sudo launchctl load -Fw /Library/LaunchDaemons/cx.pow.firewall.plist 2>/dev/null
 
 
-# Start (or restart) josh initd as well as NSS.
 echo "*** Starting the josh server..."
-# launchctl unload "$HOME/Library/LaunchAgents/cx.pow.powd.plist" 2>/dev/null || true
-# launchctl load -Fw "$HOME/Library/LaunchAgents/cx.pow.powd.plist" 2>/dev/null
-
+sudo service josh restart
 
 # Show a message about where to go for help.
 

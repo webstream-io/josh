@@ -21,13 +21,15 @@ module.exports = class Configuration
   #
   # See the `Configuration` constructor for a complete list of
   # environment options.
-  @userConfigurationPath: path.join process.env.HOME, ".joshconfig"
+  @userConfigurationPath: path.join "/etc", "josh", "config"
 
   # Evaluates the user configuration script and calls the `callback`
   # with the environment variables if the config file exists. Any
   # script errors are passed along in the first argument. (No error
   # occurs if the file does not exist.)
   @loadUserConfigurationEnvironment: (callback) ->
+    # FIXME: josh is run under root and env should be loaded through /etc/josh/env instead
+    return callback null, process.env
     getUserEnv (err, env) =>
       if err
         callback err
@@ -124,7 +126,7 @@ module.exports = class Configuration
 
     # `JOSH_RVM_PATH` (**deprecated**): path to the rvm initialization
     # script. Defaults to `~/.rvm/scripts/rvm`.
-    @rvmPath    = env.JOSH_RVM_PATH    ? path.join process.env.HOME, ".rvm/scripts/rvm"
+    @rvmPath    = env.JOSH_RVM_PATH    ? path.join "/tmp/deprecated/so/remove", ".rvm/scripts/rvm"
 
     # ---
     # Precompile regular expressions for matching domain names to be

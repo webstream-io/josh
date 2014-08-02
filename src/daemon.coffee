@@ -13,6 +13,9 @@ module.exports = class Daemon extends EventEmitter
     # `HttpServer` and `DnsServer` instances are created accordingly.
     @httpServer = new HttpServer @configuration
     @dnsServer  = new DnsServer @configuration
+
+    process.title = "josh [daemon]"
+    
     # The daemon stops in response to `SIGINT`, `SIGTERM` and
     # `SIGQUIT` signals.
     process.on "SIGINT",  @stop
