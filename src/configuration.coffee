@@ -1,4 +1,4 @@
-# The `Configuration` class encapsulates various options for a Pow
+# The `Configuration` class encapsulates various options for a josh
 # daemon (port numbers, directories, etc.). It's also responsible for
 # creating `Logger` instances and mapping hostnames to application
 # root paths.
@@ -12,16 +12,16 @@ Logger            = require "./logger"
 {getUserEnv}      = require "./util"
 
 module.exports = class Configuration
-  # The user configuration file, `~/.powconfig`, is evaluated on
+  # The user configuration file, `~/.joshconfig`, is evaluated on
   # boot.  You can configure options such as the top-level domain,
   # number of workers, the worker idle timeout, and listening ports.
   #
-  #     export POW_DOMAINS=dev,test
-  #     export POW_WORKERS=3
+  #     export JOSH_DOMAINS=dev,test
+  #     export JOSH_WORKERS=3
   #
   # See the `Configuration` constructor for a complete list of
   # environment options.
-  @userConfigurationPath: path.join process.env.HOME, ".powconfig"
+  @userConfigurationPath: path.join process.env.HOME, ".joshconfig"
 
   # Evaluates the user configuration script and calls the `callback`
   # with the environment variables if the config file exists. Any
@@ -39,7 +39,7 @@ module.exports = class Configuration
             callback null, env
 
   # Creates a Configuration object after evaluating the user
-  # configuration file. Any environment variables in `~/.powconfig`
+  # configuration file. Any environment variables in `~/.joshconfig`
   # affect the process environment and will be copied to spawned
   # subprocesses.
   @getUserConfiguration: (callback) ->
@@ -63,44 +63,46 @@ module.exports = class Configuration
 
   # Valid environment variables and their defaults:
   initialize: (@env) ->
-    # `POW_BIN`: the path to the `pow` binary. (This should be
+    # `JOSH_BIN`: the path to the `josh` binary. (This should be
     # correctly configured for you.)
-    @bin        = env.POW_BIN         ? path.join __dirname, "../bin/pow"
+    @bin        = env.JOSH_BIN         ? path.join __dirname, "../bin/josh"
 
-    # `POW_DST_PORT`: the public port Pow expects to be forwarded or
+    # `JOSH_DST_PORT`: the public port josh expects to be forwarded or
     # otherwise proxied for incoming HTTP requests. Defaults to `80`.
-    @dstPort    = env.POW_DST_PORT    ? 80
+    @dstPort    = env.JOSH_DST_PORT    ? 80
 
-    # `POW_HTTP_PORT`: the TCP port Pow opens for accepting incoming
+    # `JOSH_HTTP_PORT`: the TCP port josh opens for accepting incoming
     # HTTP requests. Defaults to `20559`.
-    @httpPort   = env.POW_HTTP_PORT   ? 20559
+    @httpPort   = env.JOSH_HTTP_PORT   ? 20559
 
-    # `POW_DNS_PORT`: the UDP port Pow listens on for incoming DNS
+    # `JOSH_DNS_PORT`: the UDP port josh listens on for incoming DNS
     # queries. Defaults to `20560`.
-    @dnsPort    = env.POW_DNS_PORT    ? 20560
+    @dnsPort    = env.JOSH_DNS_PORT    ? 20560
 
-    # `POW_TIMEOUT`: how long (in seconds) to leave inactive Rack
+    # `JOSH_TIMEOUT`: how long (in seconds) to leave inactive Rack
     # applications running before they're killed. Defaults to 15
     # minutes (900 seconds).
-    @timeout    = env.POW_TIMEOUT     ? 15 * 60
+    @timeout    = env.JOSH_TIMEOUT     ? 15 * 60
 
-    # `POW_WORKERS`: the maximum number of worker processes to spawn
+    # `JOSH_WORKERS`: the maximum number of worker processes to spawn
     # for any given application. Defaults to `2`.
-    @workers    = env.POW_WORKERS     ? 2
+    @workers    = env.JOSH_WORKERS     ? 2
 
-    # `POW_DOMAINS`: the top-level domains for which Pow will respond
+    # `JOSH_DOMAINS`: the top-level domains for which josh will respond
     # to DNS `A` queries with `127.0.0.1`. Defaults to `dev`. If you
-    # configure this in your `~/.powconfig` you will need to re-run
-    # `sudo pow --install-system` to make `/etc/resolver` aware of
+    # configure this in your `~/.joshconfig` you will need to re-run
+    # `sudo josh --install-system` to make `/etc/resolver` aware of
     # the new TLDs.
-    @domains    = env.POW_DOMAINS     ? env.POW_DOMAIN ? "dev"
+    @domains    = env.JOSH_DOMAINS     ? env.JOSH_DOMAIN ? "dev"
 
-    # `POW_EXT_DOMAINS`: additional top-level domains for which Pow
+    # `JOSH_EXT_DOMAINS`: additional top-level domains for which josh
     # will serve HTTP requests (but not DNS requests -- hence the
     # "ext").
-    @extDomains = env.POW_EXT_DOMAINS ? []
+    # FIXME: This is not required as no DNS server is implemented in
+    # josh and is handled by josh's NSS service instead.
+    @extDomains = env.JOSH_EXT_DOMAINS ? []
 
-    # Allow for comma-separated domain lists, e.g. `POW_DOMAINS=dev,test`
+    # Allow for comma-separated domain lists, e.g. `JOSH_DOMAINS=dev,test`
     @domains    = @domains.split?(",")    ? @domains
     @extDomains = @extDomains.split?(",") ? @extDomains
     @allDomains = @domains.concat @extDomains
@@ -108,21 +110,21 @@ module.exports = class Configuration
     # Support *.xip.io top-level domains.
     @allDomains.push /\d+\.\d+\.\d+\.\d+\.xip\.io$/, /[0-9a-z]{1,7}\.xip\.io$/
 
-    # Runtime support files live in `~/Library/Application Support/Pow`.
-    @supportRoot = libraryPath "Application Support", "Pow"
+    # Runtime support files live in `~/Library/Application Support/josh`.
+    @supportRoot = libraryPath ""
 
-    # `POW_HOST_ROOT`: path to the directory containing symlinks to
-    # applications that will be served by Pow. Defaults to
-    # `~/Library/Application Support/Pow/Hosts`.
-    @hostRoot   = env.POW_HOST_ROOT   ? path.join @supportRoot, "Hosts"
+    # `JOSH_HOST_ROOT`: path to the directory containing symlinks to
+    # applications that will be served by josh. Defaults to
+    # `~/Library/Application Support/josh/Hosts`.
+    @hostRoot   = env.JOSH_HOST_ROOT   ? path.join @supportRoot, "hosts"
 
-    # `POW_LOG_ROOT`: path to the directory that Pow will use to store
-    # its log files. Defaults to `~/Library/Logs/Pow`.
-    @logRoot    = env.POW_LOG_ROOT    ? libraryPath "Logs", "Pow"
+    # `JOSH_LOG_ROOT`: path to the directory that josh will use to store
+    # its log files. Defaults to `~/Library/Logs/josh`.
+    @logRoot    = env.JOSH_LOG_ROOT    ? logPath ""
 
-    # `POW_RVM_PATH` (**deprecated**): path to the rvm initialization
+    # `JOSH_RVM_PATH` (**deprecated**): path to the rvm initialization
     # script. Defaults to `~/.rvm/scripts/rvm`.
-    @rvmPath    = env.POW_RVM_PATH    ? path.join process.env.HOME, ".rvm/scripts/rvm"
+    @rvmPath    = env.JOSH_RVM_PATH    ? path.join process.env.HOME, ".rvm/scripts/rvm"
 
     # ---
     # Precompile regular expressions for matching domain names to be
@@ -144,7 +146,7 @@ module.exports = class Configuration
 
   # Globally disable or enable RVM deprecation notices by touching or
   # removing the `~/Library/Application
-  # Support/Pow/.disableRvmDeprecationNotices` file.
+  # Support/josh/.disableRvmDeprecationNotices` file.
   disableRvmDeprecationNotices: ->
     fs.writeFile path.join(@supportRoot, ".disableRvmDeprecationNotices"), ""
 
@@ -216,9 +218,12 @@ module.exports = class Configuration
           callback err, hosts
 
 # Convenience wrapper for constructing paths to subdirectories of
-# `~/Library`.
+# `/var/lib/josh`.
 libraryPath = (args...) ->
-  path.join process.env.HOME, "Library", args...
+  path.join "/var", "lib", "josh", args...
+
+logPath = (args...)->
+  path.join "/var", "log", "josh", args...
 
 # Strip a trailing `domain` from the given `host`, then generate a
 # sorted array of possible entry names for finding which application
