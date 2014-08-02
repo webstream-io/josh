@@ -3,30 +3,31 @@
 # Set up the environment. Respect $VERSION if it's set.
 
 set -e
-JOSH_ROOT="/usr/lib/josh"
-JOSH_BIN="$JOSH_ROOT/lib/bin/josh"
+JOSH_INSTALL_ROOT="/usr/lib/josh"
+JOSH_HOSTS_ROOT="/var/lib/josh/hosts"
+JOSH_LOG_ROOT="/var/log/josh"
+JOSH_CONFIG_ROOT="/etc/josh"
+JOSH_BIN="$JOSH_INSTALL_ROOT/bin/josh"
 
 echo "*** Installing josh..."
 
 
 # Create the josh directory structure if it doesn't already exist.
-sudo mkdir -p "$JOSH_ROOT/hosts"
-
+sudo mkdir -p "$JOSH_INSTALL_ROOT"
+sudo mkdir -p "$JOSH_HOSTS_ROOT"
+sudo mkdir -p "$JOSH_LOG_ROOT"
+sudo chmod o+w "$JOSH_HOSTS_ROOT"
 
 # If josh is already installed, remove it first.
-sudo rm -rf "$JOSH_ROOT/lib"
+sudo rm -rf "$JOSH_INSTALL_ROOT"
 
-# build josh and copy it over to $JOSH_ROOT
+# build josh and copy it over to $JOSH_INSTALL_ROOT
 . ./build.sh
-sudo cp -R "$TMP_ROOT" "$JOSH_ROOT/lib"
+sudo cp -R "$TMP_ROOT" "$JOSH_INSTALL_ROOT"
 
 # Create the ~/.josh symlink if it doesn't exist.
 cd "$HOME"
-[[ -a .josh ]] || ln -s "$JOSH_ROOT/hosts" .josh
-
-# Install local configuration files.
-echo "*** Installing local configuration files..."
-node "$JOSH_BIN" --install-local
+[[ -a .josh ]] || ln -s "$JOSH_HOSTS_ROOT" .josh
 
 echo "*** Installing system configuration files as root..."
 sudo node "$JOSH_BIN" --install-system
@@ -45,7 +46,7 @@ echo "*** Starting the josh server..."
 
 function print_troubleshooting_instructions() {
     echo
-    echo "For troubleshooting instructions, please see the Pow wiki:"
+    echo "For troubleshooting instructions, please see the josh wiki:"
     echo "https://github.com/webstream-io/josh/wiki/Troubleshooting"
     echo
     echo "To uninstall josh, run \`./uninstall.sh\`"

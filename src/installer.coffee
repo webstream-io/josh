@@ -52,7 +52,7 @@ class InstallerFile
   # `root` user and `wheel` group. Then invoke `callback`.
   setOwnership: (callback) =>
     if @root
-      chown @path, "root:wheel", callback
+      chown @path, "root:root", callback
     else
       callback false
 
@@ -90,11 +90,15 @@ module.exports = class Installer
         resolverSource(@configuration),
         true
 
+    # TODO: Install libnss_josh.so.2 and upstart/systemd scripts here
+    files = []
     new Installer files
 
   # Factory method that takes a `Configuration` instance and returns
   # an `Installer` for the Pow `launchctl` daemon configuration file.
   @getLocalInstaller: (@configuration) ->
+    # TODO: Disable local installer, nothing to do here
+    return
     new Installer [
       new InstallerFile "#{process.env.HOME}/Library/LaunchAgents/cx.pow.powd.plist",
         daemonSource(@configuration)

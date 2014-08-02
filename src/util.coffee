@@ -198,8 +198,8 @@ readAndUnlink = (filename, callback) ->
 # bubble the error up to the callback.
 loginExec = (command, callback) ->
   getUserShell (shell) ->
-    login = ["login", "-qf", process.env.LOGNAME, shell]
-    exec [login..., "-i", "-c", command], (err, stdout, stderr) ->
+    login = ["sudo", "su", "-l", process.env.LOGNAME]
+    exec [login..., "-c", command], (err, stdout, stderr) ->
       if err
         exec [login..., "-c", command], callback
       else
