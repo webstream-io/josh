@@ -93,7 +93,7 @@ module.exports = class RackApplication
   # into a source code repository for global configuration, leaving
   # `.powenv` free for any necessary local overrides.
   loadScriptEnvironment: (env, callback) ->
-    async.reduce [".powrc", ".envrc", ".powenv"], env, (env, filename, callback) =>
+    async.reduce [".joshenv"], env, (env, filename, callback) =>
       fs.exists script = join(@root, filename), (scriptExists) ->
         if scriptExists
           sourceScriptEnv script, env, callback
@@ -159,6 +159,8 @@ module.exports = class RackApplication
       # pool instance using the `workers` and `timeout` options from
       # the application's environment or the global configuration.
       else
+        @logger.debug "Loaded env"
+        @logger.debug env
         @state = "ready"
 
         @pool = nack.createPool join(@root, "config.ru"),

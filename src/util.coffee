@@ -119,26 +119,38 @@ exports.sourceScriptEnv = (script, env, options, callback) ->
   # output written to stderr. Finally, dump the current environment to
   # a temporary file.
   cwd = path.dirname script
-  filename = makeTemporaryFilename()
-  command = """
-    #{options.before ? "true"} &&
-    source #{quote script} > /dev/null &&
-    env > #{quote filename}
-  """
-
-  # Run our command through Bash in the directory of the script. If an
-  # error occurs, rewrite the error to a more descriptive
-  # message. Otherwise, read and parse the environment from the
-  # temporary file and pass it along to the callback.
-  exec ["bash", "-c", command], {cwd, env}, (err, stdout, stderr) ->
+  # Execute the script within context of project's owner, so that we can fetch user
+  # specific env, guess it if not already provided
+  exec ["find", cwd, "-maxdepth", "0" , "-printf", "%u"], (err, stdout, stderr) ->
     if err
       err.message = "'#{script}' failed to load:\n#{command}"
       err.stdout = stdout
       err.stderr = stderr
       callback err
-    else readAndUnlink filename, (err, result) ->
-      if err then callback err
-      else callback null, parseEnv result
+    else
+      options.user ?= stdout
+      filename = makeTemporaryFilename()
+      # su -l resets the pwd to ~, so issue a `cd cwd` before source'ing
+      command = """
+        #{options.before ? "true"} &&
+      cd #{quote cwd} &&
+      source #{quote script} > /dev/null &&
+        env > #{quote filename}
+      """
+
+      # Run our command through Bash in the directory of the script. If an
+      # error occurs, rewrite the error to a more descriptive
+      # message. Otherwise, read and parse the environment from the
+      # temporary file and pass it along to the callback.
+      exec ["su", "-l", options.user, "-c", command], {cwd, env}, (err, stdout, stderr) ->
+        if err
+          err.message = "'#{script}' failed to load:\n#{command}"
+          err.stdout = stdout
+          err.stderr = stderr
+          callback err
+        else readAndUnlink filename, (err, result) ->
+          if err then callback err
+          else callback null, parseEnv result
 
 # Get the user's login environment by spawning a login shell and
 # collecting its environment variables via the `env` command. (In case
