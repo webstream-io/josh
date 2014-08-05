@@ -5,7 +5,9 @@
 
 ### Installation
 
-TODO
+    git clone https://github.com/webstream-io/josh.git
+    cd josh
+    ./install.sh
 
 ### About name
 
