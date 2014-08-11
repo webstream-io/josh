@@ -5,5 +5,4 @@ script:
   - "node --version"
   - "npm --version"
   - "ruby --version"
-  - "rackup --version"
   - "npm test"
