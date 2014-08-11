@@ -9,9 +9,9 @@ http              = require "http"
 
 serveApp = (path, callback) ->
   configuration = createConfiguration
-    POW_HOST_ROOT: fixturePath("apps")
-    POW_RVM_PATH:  fixturePath("fake-rvm")
-    POW_WORKERS:   1
+    JOSH_HOST_ROOT: fixturePath("apps")
+    JOSH_RVM_PATH:  fixturePath("fake-rvm")
+    JOSH_WORKERS:   1
 
   @application = new RackApplication configuration, fixturePath(path)
   server = connect.createServer()
@@ -149,21 +149,21 @@ module.exports = testCase
     serveApp "apps/env", (request, done) ->
       request "GET", "/", (body) ->
         env = JSON.parse body
-        test.same "Hello Pow", env.POW_TEST
-        test.same "Overridden by .powenv", env.POW_TEST2
-        test.same "Hello!", env.POW_TEST3
+        test.same "Hello Pow", env.JOSH_TEST
+        test.same "Overridden by .powenv", env.JOSH_TEST2
+        test.same "Hello!", env.JOSH_TEST3
         done -> test.done()
 
   "custom environments are reloaded after a restart": (test) ->
     serveApp "apps/env", (request, done) ->
       request "GET", "/", (body) ->
-        test.same "Hello!", JSON.parse(body).POW_TEST3
-        powenv1 = fixturePath("apps/env/.powenv")
-        powenv2 = fixturePath("apps/env/.powenv2")
+        test.same "Hello!", JSON.parse(body).JOSH_TEST3
+        powenv1 = fixturePath("apps/env/.joshenv")
+        powenv2 = fixturePath("apps/env/.joshenv2")
         swap powenv1, powenv2, (err, unswap) ->
           touch restart = fixturePath("apps/env/tmp/restart.txt"), ->
             request "GET", "/", (body) ->
-              test.same "Goodbye!", JSON.parse(body).POW_TEST3
+              test.same "Goodbye!", JSON.parse(body).JOSH_TEST3
               done -> unswap -> fs.unlink restart, -> test.done()
 
   "custom worker/timeout values are loaded": (test) ->
@@ -171,8 +171,8 @@ module.exports = testCase
       request "GET", "/", (body) ->
         test.same @application.pool.processOptions.idle, 900 * 1000
         test.same @application.pool.workers.length, 1
-        powenv1 = fixturePath("apps/env/.powenv")
-        powenv2 = fixturePath("apps/env/.powenv2")
+        powenv1 = fixturePath("apps/env/.joshenv")
+        powenv2 = fixturePath("apps/env/.joshenv2")
         swap powenv1, powenv2, (err, unswap) ->
           touch restart = fixturePath("apps/env/tmp/restart.txt"), ->
             request "GET", "/", (body) ->
@@ -180,7 +180,7 @@ module.exports = testCase
               test.same @application.pool.workers.length, 3
               done -> unswap -> fs.unlink restart, -> test.done()
 
-  "handling an error in .powrc": (test) ->
+  "handling an error in .joshenv": (test) ->
     test.expect 2
     serveApp "apps/rc-error", (request, done, application) ->
       request "GET", "/", (body, response) ->

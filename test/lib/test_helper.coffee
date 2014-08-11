@@ -5,6 +5,10 @@ http   = require "http"
 
 {Configuration} = require "../.."
 
+# Because nodeunit isn't printing the error otherwise
+process.on 'uncaughtException', (err) ->
+  throw err
+
 exports.merge = merge = (objects...) ->
   result = {}
   for object in objects
@@ -16,8 +20,8 @@ exports.fixturePath = fixturePath = (path) ->
   join fs.realpathSync(join __dirname, ".."), "fixtures", path
 
 defaultEnvironment =
-  POW_HOST_ROOT: fixturePath "tmp"
-  POW_LOG_ROOT:  fixturePath "tmp/logs"
+  JOSH_HOST_ROOT: fixturePath "tmp"
+  JOSH_LOG_ROOT:  fixturePath "tmp/logs"
 
 exports.createConfiguration = (env = {}) ->
   new Configuration merge defaultEnvironment, env

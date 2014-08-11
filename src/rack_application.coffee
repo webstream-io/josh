@@ -165,8 +165,8 @@ module.exports = class RackApplication
 
         @pool = nack.createPool join(@root, "config.ru"),
           env:  env
-          size: env?.POW_WORKERS ? @configuration.workers
-          idle: (env?.POW_TIMEOUT ? @configuration.timeout) * 1000
+          size: env?.JOSH_WORKERS ? @configuration.workers
+          idle: (env?.JOSH_TIMEOUT ? @configuration.timeout) * 1000
 
         # Log the workers' stderr and stdout, and log each worker's
         # PID as it spawns and exits.

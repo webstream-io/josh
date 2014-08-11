@@ -1,3 +1,0 @@
-export POW_TEST2="Overridden by .powenv"
-export POW_TEST3="Hello!"
-

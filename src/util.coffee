@@ -138,11 +138,17 @@ exports.sourceScriptEnv = (script, env, options, callback) ->
         env > #{quote filename}
       """
 
+      su_command = ["su", "-l", options.user, "-c", command]
+
+      # tests shouldn't require root access
+      if fs.statSync(cwd).uid == process.getuid()
+        su_command = ["bash", "-c", command]
+
       # Run our command through Bash in the directory of the script. If an
       # error occurs, rewrite the error to a more descriptive
       # message. Otherwise, read and parse the environment from the
       # temporary file and pass it along to the callback.
-      exec ["su", "-l", options.user, "-c", command], {cwd, env}, (err, stdout, stderr) ->
+      exec su_command, {cwd, env}, (err, stdout, stderr) ->
         if err
           err.message = "'#{script}' failed to load:\n#{command}"
           err.stdout = stdout

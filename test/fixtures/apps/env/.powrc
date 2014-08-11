@@ -1,4 +1,0 @@
-#!/bin/sh
-export POW_TEST="Hello Pow"
-export POW_TEST2="This should be overridden by .powenv"
-

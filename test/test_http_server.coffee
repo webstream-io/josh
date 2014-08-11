@@ -10,8 +10,8 @@ serveRoot = (root, options, callback) ->
     callback = options
     options  = {}
   configuration = createConfiguration
-    POW_HOST_ROOT: fixturePath(root),
-    POW_DST_PORT:  options.dstPort ? 80
+    JOSH_HOST_ROOT: fixturePath(root),
+    JOSH_DST_PORT:  options.dstPort ? 80
   if root is "proxies"
     # there's a proxy setup in this dir to 14136
     # let's create an app for it
@@ -49,7 +49,7 @@ module.exports = testCase
             proceed()
         (proceed) ->
           request "GET", "/", host: "env.dev", (body) ->
-            test.same "Hello Pow", JSON.parse(body).POW_TEST
+            test.same "Hello Pow", JSON.parse(body).JOSH_TEST
             proceed()
         (proceed) ->
           request "GET", "/", host: "pid.dev", (body) ->

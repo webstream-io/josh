@@ -10,7 +10,7 @@ module.exports = testCase
 
   "gatherHostConfigurations returns directories and symlinks to directories": (test) ->
     test.expect 1
-    configuration = createConfiguration POW_HOST_ROOT: fixturePath("configuration")
+    configuration = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration")
     configuration.gatherHostConfigurations (err, hosts) ->
       test.same hosts,
         "directory":            { root: fixturePath("configuration/directory") }
@@ -23,7 +23,7 @@ module.exports = testCase
 
   "gatherHostConfigurations with non-existent host": (test) ->
     test.expect 2
-    configuration = createConfiguration POW_HOST_ROOT: fixturePath("tmp/pow")
+    configuration = createConfiguration JOSH_HOST_ROOT: fixturePath("tmp/pow")
     configuration.gatherHostConfigurations (err, hosts) ->
       test.same {}, hosts
       fs.lstat fixturePath("tmp/pow"), (err, stat) ->
@@ -31,7 +31,7 @@ module.exports = testCase
         test.done()
 
   "findHostConfiguration matches hostnames to application roots": (test) ->
-    configuration   = createConfiguration POW_HOST_ROOT: fixturePath("configuration")
+    configuration   = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration")
     matchHostToRoot = (host, fixtureRoot) -> (proceed) ->
       configuration.findHostConfiguration host, (err, domain, conf) ->
         if fixtureRoot
@@ -54,7 +54,7 @@ module.exports = testCase
     ], test.done
 
   "findHostConfiguration with alternate domain": (test) ->
-    configuration = createConfiguration POW_HOST_ROOT: fixturePath("configuration"), POW_DOMAINS: "dev.local"
+    configuration = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration"), JOSH_DOMAINS: "dev.local"
     test.expect 3
     configuration.findHostConfiguration "directory.dev.local", (err, domain, conf) ->
       test.same "dev.local", domain
@@ -64,7 +64,7 @@ module.exports = testCase
         test.done()
 
   "findHostConfiguration with multiple domains": (test) ->
-    configuration = createConfiguration POW_HOST_ROOT: fixturePath("configuration"), POW_DOMAINS: ["test", "dev"]
+    configuration = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration"), JOSH_DOMAINS: ["test", "dev"]
     test.expect 4
     configuration.findHostConfiguration "directory.dev", (err, domain, conf) ->
       test.same "dev", domain
@@ -75,7 +75,7 @@ module.exports = testCase
         test.done()
 
   "findHostConfiguration with default host": (test) ->
-    configuration = createConfiguration POW_HOST_ROOT: fixturePath("configuration-with-default")
+    configuration = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration-with-default")
     test.expect 2
     configuration.findHostConfiguration "missing.dev", (err, domain, conf) ->
       test.same "dev", domain
@@ -83,7 +83,7 @@ module.exports = testCase
       test.done()
 
   "findHostConfiguration with ext domain": (test) ->
-    configuration = createConfiguration POW_HOST_ROOT: fixturePath("configuration"), POW_DOMAINS: ["dev"], POW_EXT_DOMAINS: ["me"]
+    configuration = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration"), JOSH_DOMAINS: ["dev"], JOSH_EXT_DOMAINS: ["me"]
     test.expect 2
     configuration.findHostConfiguration "directory.me", (err, domain, conf) ->
       test.same "me", domain
@@ -91,7 +91,7 @@ module.exports = testCase
       test.done()
 
   "findHostConfiguration matches regex domains": (test) ->
-    configuration = createConfiguration POW_HOST_ROOT: fixturePath("configuration"), POW_DOMAINS: ["dev"], POW_EXT_DOMAINS: [/foo\d$/]
+    configuration = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration"), JOSH_DOMAINS: ["dev"], JOSH_EXT_DOMAINS: [/foo\d$/]
     test.expect 2
     configuration.findHostConfiguration "directory.foo3", (err, domain, conf) ->
       test.ok domain.test?
@@ -99,7 +99,7 @@ module.exports = testCase
       test.done()
 
   "findHostConfiguration matches xip.io domains": (test) ->
-    configuration   = createConfiguration POW_HOST_ROOT: fixturePath("configuration")
+    configuration   = createConfiguration JOSH_HOST_ROOT: fixturePath("configuration")
     matchHostToRoot = (host, fixtureRoot) -> (proceed) ->
       configuration.findHostConfiguration host, (err, domain, conf) ->
         if fixtureRoot
@@ -137,7 +137,7 @@ module.exports = testCase
     logger = configuration.getLogger "test"
     test.same fixturePath("tmp/logs/test.log"), logger.path
 
-    configuration = createConfiguration POW_LOG_ROOT: fixturePath("tmp/log2")
+    configuration = createConfiguration JOSH_LOG_ROOT: fixturePath("tmp/log2")
     logger = configuration.getLogger "test"
     test.same fixturePath("tmp/log2/test.log"), logger.path
 

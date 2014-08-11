@@ -18,7 +18,7 @@ module.exports = testCase
         test.expect 0
         test.done()
       else
-        configuration = createConfiguration POW_DOMAINS: "powtest,powdev"
+        configuration = createConfiguration JOSH_DOMAINS: "powtest,powdev"
         dnsServer = new DnsServer configuration
         address = "0.0.0.0"
         port = 20561

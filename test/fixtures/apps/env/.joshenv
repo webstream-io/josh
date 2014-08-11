@@ -1,0 +1,4 @@
+export JOSH_TEST="Hello Pow"
+export JOSH_TEST2="Overridden by .powenv"
+export JOSH_TEST3="Hello!"
+

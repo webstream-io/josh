@@ -12,7 +12,7 @@ module.exports = testCase
   "start and stop": (test) ->
     test.expect 2
 
-    configuration = new Configuration POW_HOST_ROOT: fixturePath("tmp"), POW_HTTP_PORT: 0, POW_DNS_PORT: 0
+    configuration = new Configuration JOSH_HOST_ROOT: fixturePath("tmp"), JOSH_HTTP_PORT: 0, JOSH_DNS_PORT: 0
     daemon = new Daemon configuration
 
     daemon.start()
@@ -29,7 +29,7 @@ module.exports = testCase
     server = net.createServer()
     server.listen 0, ->
       port = server.address().port
-      configuration = new Configuration POW_HOST_ROOT: fixturePath("tmp"), POW_HTTP_PORT: port
+      configuration = new Configuration JOSH_HOST_ROOT: fixturePath("tmp"), JOSH_HTTP_PORT: port
       daemon = new Daemon configuration
 
       daemon.start()
@@ -43,7 +43,7 @@ module.exports = testCase
     test.expect 1
 
     restartFilename = path.join fixturePath("tmp"), "restart.txt"
-    configuration = new Configuration POW_HOST_ROOT: fixturePath("tmp"), POW_HTTP_PORT: 0, POW_DNS_PORT: 0
+    configuration = new Configuration JOSH_HOST_ROOT: fixturePath("tmp"), JOSH_HTTP_PORT: 0, JOSH_DNS_PORT: 0
     daemon = new Daemon configuration
 
     daemon.start()
