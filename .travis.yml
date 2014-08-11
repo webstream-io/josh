@@ -1,6 +1,9 @@
 language: node_js
 node_js:
   - "0.10"
-  - "0.8"
-notifications:
-  disabled: true
+script:
+  - "node --version"
+  - "npm --version"
+  - "ruby --version"
+  - "rackup --version"
+  - "npm test"
