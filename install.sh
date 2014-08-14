@@ -7,7 +7,7 @@ JOSH_INSTALL_ROOT="/usr/lib/josh"
 JOSH_HOSTS_ROOT="/var/lib/josh/hosts"
 JOSH_LOG_ROOT="/var/log/josh"
 JOSH_CONFIG_ROOT="/etc/josh"
-JOSH_BIN="$JOSH_INSTALL_ROOT/bin/josh"
+JOSHD_BIN="$JOSH_INSTALL_ROOT/bin/joshd"
 
 echo "*** Installing josh..."
 
@@ -23,7 +23,7 @@ sudo cp ext/libnss_josh.so.2 /lib
 sudo sed -i -r -e '/\bjosh\b/ !s/^hosts:(.+)\bdns\b/hosts:\1josh dns/' /etc/nsswitch.conf
 
 # install upstart service
-cat initscripts/upstart.conf | m4 -D__JOSH_BIN__=$JOSH_BIN | sudo tee /etc/init/josh.conf > /dev/null
+cat initscripts/upstart.conf | m4 -D__JOSHD_BIN__=$JOSHD_BIN | sudo tee /etc/init/josh.conf > /dev/null
 
 # If josh is already installed, remove it first.
 sudo rm -rf "$JOSH_INSTALL_ROOT"
@@ -37,7 +37,7 @@ cd "$HOME"
 [[ -a .josh ]] || ln -s "$JOSH_HOSTS_ROOT" .josh
 
 echo "*** Installing system configuration files as root..."
-sudo "$JOSH_BIN" --install-system
+sudo "$JOSHD_BIN" --install-system
 
 # install libnss_josh here
 # sudo launchctl load -Fw /Library/LaunchDaemons/cx.pow.firewall.plist 2>/dev/null
@@ -63,7 +63,7 @@ function print_troubleshooting_instructions() {
 # source the configuration and use it to run a self-test.
 
 # disabled for now
-# CONFIG=$(node "$JOSH_BIN" --print-config 2>/dev/null || true)
+# CONFIG=$(node "$JOSHD_BIN" --print-config 2>/dev/null || true)
 
 if [[ -n "$CONFIG" ]]; then
     eval "$CONFIG"

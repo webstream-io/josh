@@ -65,9 +65,9 @@ module.exports = class Configuration
 
   # Valid environment variables and their defaults:
   initialize: (@env) ->
-    # `JOSH_BIN`: the path to the `josh` binary. (This should be
+    # `JOSHD_BIN`: the path to the `josh` binary. (This should be
     # correctly configured for you.)
-    @bin        = env.JOSH_BIN         ? path.join __dirname, "../bin/josh"
+    @bin        = env.JOSHD_BIN         ? path.join __dirname, "../bin/joshd"
 
     # `JOSH_DST_PORT`: the public port josh expects to be forwarded or
     # otherwise proxied for incoming HTTP requests. Defaults to `80`.
