@@ -74,14 +74,15 @@ task 'pretest', "Install test dependencies", ->
 task 'test', 'Run the Pow test suite', ->
   build ->
     buildTemplates ->
-      process.env["RUBYOPT"]  = "-rubygems"
-      process.env["NODE_ENV"] = "test"
+      buildAdapters ->
+        process.env["RUBYOPT"]  = "-rubygems"
+        process.env["NODE_ENV"] = "test"
 
-      {reporters} = require 'nodeunit'
-      process.chdir __dirname
-      reporters.default.run ['test']
-      process.chdir "#{__dirname}/adapters/ruby_rack"
-      reporters.default.run ['test']
+        {reporters} = require 'nodeunit'
+        process.chdir __dirname
+        reporters.default.run ['test']
+        process.chdir "#{__dirname}/adapters/ruby_rack"
+        reporters.default.run ['test']
 
 task 'install', 'Install pow configuration files', ->
   sh = (command, callback) ->
