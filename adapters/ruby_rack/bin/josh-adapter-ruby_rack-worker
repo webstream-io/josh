@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require 'nack/server'
+Nack::Server.run(ARGV[0], :file => ARGV[1])

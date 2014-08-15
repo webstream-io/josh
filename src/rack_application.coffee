@@ -26,7 +26,7 @@
 
 async = require "async"
 fs    = require "fs"
-nack  = require "nack"
+nack  = require "../adapters/ruby_rack"
 
 {bufferLines, pause, sourceScriptEnv} = require "./util"
 {join, basename, resolve} = require "path"

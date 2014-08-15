@@ -1,8 +1,10 @@
 language: node_js
 node_js:
   - "0.10"
-script:
-  - "node --version"
-  - "npm --version"
+install:
+  - "gem install rack"
+before_script:
   - "ruby --version"
+script:
   - "npm test"
+  - "cd adapters/ruby_rack; rake test"

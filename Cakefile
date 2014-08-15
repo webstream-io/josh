@@ -3,18 +3,24 @@ fs            = require 'fs'
 {print}       = require 'util'
 {spawn, exec} = require 'child_process'
 
-build = (watch, callback) ->
+brewCoffee = (watch, dest, src, callback) ->
   if typeof watch is 'function'
     callback = watch
     watch = false
-  options = ['-c', '-o', 'lib', 'src']
+  options = ['-c', '-o', dest, src]
   options.unshift '-w' if watch
 
   coffee = spawn 'node_modules/.bin/coffee', options
   coffee.stdout.on 'data', (data) -> print data.toString()
   coffee.stderr.on 'data', (data) -> print data.toString()
   coffee.on 'exit', (status) -> callback?() if status is 0
+  
+build = (watch, callback) ->
+  brewCoffee(watch, 'lib', 'src', callback)
 
+buildAdapters = (watch, callback) ->
+  brewCoffee(watch, 'adapters/ruby_rack/lib', 'adapters/ruby_rack/src', callback)
+  
 buildTemplates = (callback) ->
   exec = require('child_process').exec;
   exec("mkdir -p lib/templates/http_server")
@@ -50,9 +56,11 @@ task 'docs', 'Generate annotated source code with Docco', ->
 task 'build', 'Compile CoffeeScript source files', ->
   build()
   buildTemplates()
+  buildAdapters()
 
 task 'watch', 'Recompile CoffeeScript source files when modified', ->
   build true
+  buildAdapters true
 
 task 'pretest', "Install test dependencies", ->
   exec 'which ruby gem', (err) ->
@@ -71,6 +79,8 @@ task 'test', 'Run the Pow test suite', ->
 
       {reporters} = require 'nodeunit'
       process.chdir __dirname
+      reporters.default.run ['test']
+      process.chdir "#{__dirname}/adapters/ruby_rack"
       reporters.default.run ['test']
 
 task 'install', 'Install pow configuration files', ->

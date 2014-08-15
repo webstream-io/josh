@@ -1,4 +1,12 @@
-Copyright (c) 2014 Sam Stephenson, Basecamp
+Copyright (c) 2014 webstream.io
+
+This software includes code from following projects:
+
+* {idea, core} = https://github.com/basecamp/pow (MIT Licence) (c) Sam Stephenson, Basecamp
+* {ruby_rack adapter} = https://github.com/josh/nack (MIT Licence) (c) Joshua Peek
+* {nss service} = https://github.com/ysbaddaden/prax (MIT Licence) (c) Julien Portalier
+
+====
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
