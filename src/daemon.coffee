@@ -1,15 +1,19 @@
 # A `Daemon` is the root object in a Pow process. It's responsible for
 # starting and stopping an `HttpServer` and a `DnsServer` in tandem.
 
-{EventEmitter} = require "events"
-HttpServer     = require "./http_server"
-DnsServer      = require "./dns_server"
-fs             = require "fs"
-path           = require "path"
+{EventEmitter}      = require "events"
+HttpServer          = require "./http_server"
+DnsServer           = require "./dns_server"
+fs                  = require "fs"
+path                = require "path"
+{identifyUidAndGid} = require "./util"
 
 module.exports = class Daemon extends EventEmitter
   # Create a new `Daemon` with the given `Configuration` instance.
   constructor: (@configuration) ->
+    # Export serverLogger to global namespace
+    GLOBAL.serverLogger = @configuration.serverLogger()
+    
     # `HttpServer` and `DnsServer` instances are created accordingly.
     @httpServer = new HttpServer @configuration
     @dnsServer  = new DnsServer @configuration
@@ -54,12 +58,14 @@ module.exports = class Daemon extends EventEmitter
     return if @starting or @started
     @starting = true
 
-    startServer = (server, port, callback) -> process.nextTick ->
+    startServer = (server, port, callback) => process.nextTick =>
       try
         server.on 'error', callback
 
-        server.once 'listening', ->
+        server.once 'listening', =>
           server.removeListener 'error', callback
+          @dropPrivileges()
+          serverLogger.info "Listening on #{server.address().address}:#{server.address().port}"
           callback()
 
         server.listen port
@@ -108,3 +114,23 @@ module.exports = class Daemon extends EventEmitter
         @stopping = false
         @started  = false
         @emit "stop"
+
+  # Check if current user is root, then change process's user to supplied user value.
+  # This is useful as rvm is usually installed inside user's home directory
+  # and we need to read the +env+ from ~/.bashrc and .joshenv as that user
+  dropPrivileges: ->
+    try
+      # only setuid if we are root
+      if process.getuid() == 0
+        if @configuration.runAsGroup
+          process.setgid(@configuration.runAsGroup)
+        if @configuration.runAsUser
+          process.setuid(@configuration.runAsUser)
+      identifyUidAndGid null, null, (err, user, group, uid, gid) ->
+        if err
+          serverLogger.error err
+        else
+          serverLogger.info "Running as user #{user} (uid: #{uid}), group #{group} (gid: #{gid})"
+    catch err
+      serverLogger.error "Couldn't drop privileges, bailing out"
+      process.exit(1)

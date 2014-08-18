@@ -1,0 +1,10 @@
+{
+  "run as user"                     : "__1__",
+  "http port"                       : 80,
+  "https port"                      : 443,
+  "tlds"                            : ["dev"],
+  "inactive app timeout in seconds" : 960,
+  "max workers per application"     : 2,
+  "log directory"                   : "__2__",
+  "hosts directory"                 : "__3__"
+}

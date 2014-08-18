@@ -4,7 +4,7 @@
 fs         = require "fs"
 path       = require "path"
 async      = require "async"
-{execFile} = require "child_process"
+{execFile, exec: cpExec} = require "child_process"
 {Stream}   = require "stream"
 
 # The `LineBuffer` class is a `Stream` that emits a `data` event for
@@ -48,16 +48,34 @@ exports.bufferLines = (stream, callback) ->
 
 # ---
 
+# Get user & group name from uid & gid
+exports.identifyUidAndGid = (uid = process.getuid(), gid = process.getgid(), callback) ->
+  cpExec "getent passwd #{uid} | cut -d: -f1", (err, stdout, stderr) ->
+    if err
+      callback err
+    else
+      user = stdout
+      cpExec "getent group #{gid} | cut -d: -f1", (err, stdout, stderr) ->
+        if err
+          callback err
+        else
+          group = stdout
+          callback(null, user.trim(), group.trim(), uid, gid)
+
 # Asynchronously and recursively create a directory if it does not
 # already exist. Then invoke the given callback.
-exports.mkdirp = (dirname, callback) ->
+exports.mkdirp = (dirname, mode, callback) ->
+  if mode.call
+    callback = mode
+    mode = null
+  mode ?= 0o755
   fs.lstat (p = path.normalize dirname), (err, stats) ->
     if err
       paths = [p].concat(p = path.dirname p until p in ["/", "."])
       async.forEachSeries paths.reverse(), (p, next) ->
         fs.exists p, (exists) ->
           if exists then next()
-          else fs.mkdir p, 0o755, (err) ->
+          else fs.mkdir p, mode, (err) ->
             if err then callback err
             else next()
       , callback

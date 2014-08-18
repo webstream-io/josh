@@ -4,26 +4,21 @@
 
 set -e
 JOSH_INSTALL_ROOT="/usr/lib/josh"
-JOSH_HOSTS_ROOT="/var/lib/josh/hosts"
+JOSH_HOSTS_ROOT="/var/lib/josh"
 JOSH_LOG_ROOT="/var/log/josh"
 JOSH_CONFIG_ROOT="/etc/josh"
 JOSHD_BIN="$JOSH_INSTALL_ROOT/bin/joshd"
-
+JOSH_CONFIG_CURRENT_USER=`whoami`
 echo "*** Installing josh..."
 
 
 # Create the josh directory structure if it doesn't already exist.
 sudo mkdir -p "$JOSH_INSTALL_ROOT"
 sudo mkdir -p "$JOSH_HOSTS_ROOT"
+sudo mkdir -p "$JOSH_CONFIG_ROOT"
 sudo mkdir -p "$JOSH_LOG_ROOT"
-sudo chmod o+w "$JOSH_HOSTS_ROOT"
-
-# install NSS service
-sudo cp ext/libnss_josh.so.2 /lib
-sudo sed -i -r -e '/\bjosh\b/ !s/^hosts:(.+)\bdns\b/hosts:\1josh dns/' /etc/nsswitch.conf
-
-# install upstart service
-cat initscripts/upstart.conf | m4 -D__JOSHD_BIN__=$JOSHD_BIN | sudo tee /etc/init/josh.conf > /dev/null
+sudo chmod a+w "$JOSH_LOG_ROOT"
+sudo chmod a+w "$JOSH_HOSTS_ROOT"
 
 # If josh is already installed, remove it first.
 sudo rm -rf "$JOSH_INSTALL_ROOT"
@@ -33,15 +28,20 @@ sudo rm -rf "$JOSH_INSTALL_ROOT"
 sudo cp -R "$TMP_ROOT" "$JOSH_INSTALL_ROOT"
 
 # Create the ~/.josh symlink if it doesn't exist.
-cd "$HOME"
-[[ -a .josh ]] || ln -s "$JOSH_HOSTS_ROOT" .josh
+[[ -e "$HOME/.josh" ]] || ln -s "$JOSH_HOSTS_ROOT" "$HOME/.josh"
 
-echo "*** Installing system configuration files as root..."
-sudo "$JOSHD_BIN" --install-system
+# install NSS service
+sudo cp ext/libnss_josh.so.2 /lib
+sudo sed -i -r -e '/\bjosh\b/ !s/^hosts:(.+)\bdns\b/hosts:\1josh dns/' /etc/nsswitch.conf
 
-# install libnss_josh here
-# sudo launchctl load -Fw /Library/LaunchDaemons/cx.pow.firewall.plist 2>/dev/null
+# install upstart service
+cat sysconfigs/upstart.conf | m4 -D__JOSHD_BIN__=$JOSHD_BIN | sudo tee /etc/init/josh.conf > /dev/null 
 
+# install configuration, only if not already present
+JOSH_CONFIG_FILE_PATH="$JOSH_CONFIG_ROOT/config.json"
+[[ -e $JOSH_CONFIG_FILE_PATH ]] || {
+  cat sysconfigs/config.json | m4 -D__1__=$JOSH_CONFIG_CURRENT_USER -D__2__=$JOSH_LOG_ROOT -D__3__=$JOSH_HOSTS_ROOT | sudo tee $JOSH_CONFIG_FILE_PATH > /dev/null
+}
 
 echo "*** Starting the josh server..."
 sudo service josh restart

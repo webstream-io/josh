@@ -142,3 +142,11 @@ module.exports = testCase
     test.same fixturePath("tmp/log2/test.log"), logger.path
 
     test.done()
+
+  "loads config file on initialise": (test) ->
+    test.expect 1
+    
+    configuration = createConfiguration JOSH_CONFIG_PATH: fixturePath("configuration/example-config.json")
+    test.same 20, configuration.workers
+    
+    test.done()

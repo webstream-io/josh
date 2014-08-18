@@ -61,7 +61,17 @@ module.exports = class Configuration
   # creating a `Configuration` instance.
   constructor: (env = process.env) ->
     @loggers = {}
+    @loadConfig env
     @initialize env
+
+  # Load the configuration from /etc/josh/config.json or from a
+  # custom config file set by `JOSH_CONFIG_PATH` env variable.
+  loadConfig: (env) ->
+    configPath = env.JOSH_CONFIG_PATH ? '/etc/josh/config.json'
+    if fs.existsSync(configPath)
+      @config = JSON.parse fs.readFileSync configPath
+    else
+      @config = {}
 
   # Valid environment variables and their defaults:
   initialize: (@env) ->
@@ -69,33 +79,43 @@ module.exports = class Configuration
     # correctly configured for you.)
     @bin        = env.JOSHD_BIN         ? path.join __dirname, "../bin/joshd"
 
+    # `JOSH_RUN_AS_USER`: value for `setuid`.
+    # User to which the process will make its owner after
+    # doing privileged work like binding to restricted ports (e.g., 80 & 443).
+    @runAsUser  = env.JOSH_RUN_AS_USER  ? @config["run as user"]
+
+    # `JOSH_RUN_AS_GROUP`: value for `setguid()`, defaults to `@runAsUser`
+    @runAsGroup  = env.JOSH_RUN_AS_GROUP  ? @config["run as group"] ? @runAsUser
+
     # `JOSH_DST_PORT`: the public port josh expects to be forwarded or
     # otherwise proxied for incoming HTTP requests. Defaults to `80`.
+    # 
+    # FIXME: This needs to be removed
     @dstPort    = env.JOSH_DST_PORT    ? 80
 
     # `JOSH_HTTP_PORT`: the TCP port josh opens for accepting incoming
     # HTTP requests. Defaults to `20559`.
-    @httpPort   = env.JOSH_HTTP_PORT   ? 20559
+    @httpPort   = env.JOSH_HTTP_PORT   ? @config["http port"] ? 20559
 
     # `JOSH_DNS_PORT`: the UDP port josh listens on for incoming DNS
     # queries. Defaults to `20560`.
     @dnsPort    = env.JOSH_DNS_PORT    ? 20560
 
     # `JOSH_TIMEOUT`: how long (in seconds) to leave inactive Rack
-    # applications running before they're killed. Defaults to 15
-    # minutes (900 seconds).
-    @timeout    = env.JOSH_TIMEOUT     ? 15 * 60
+    # applications running before they're killed. Defaults to 16
+    # minutes (960 seconds).
+    @timeout    = env.JOSH_TIMEOUT     ? @config["inactive app timeout in seconds"] ? 16 * 60
 
     # `JOSH_WORKERS`: the maximum number of worker processes to spawn
     # for any given application. Defaults to `2`.
-    @workers    = env.JOSH_WORKERS     ? 2
+    @workers    = env.JOSH_WORKERS     ? @config["max workers per application"] ? 2
 
     # `JOSH_DOMAINS`: the top-level domains for which josh will respond
     # to DNS `A` queries with `127.0.0.1`. Defaults to `dev`. If you
     # configure this in your `~/.joshconfig` you will need to re-run
     # `sudo josh --install-system` to make `/etc/resolver` aware of
     # the new TLDs.
-    @domains    = env.JOSH_DOMAINS     ? env.JOSH_DOMAIN ? "dev"
+    @domains    = env.JOSH_DOMAINS     ? env.JOSH_DOMAIN ? @config["tlds"] ? "dev"
 
     # `JOSH_EXT_DOMAINS`: additional top-level domains for which josh
     # will serve HTTP requests (but not DNS requests -- hence the
@@ -112,17 +132,14 @@ module.exports = class Configuration
     # Support *.xip.io top-level domains.
     @allDomains.push /\d+\.\d+\.\d+\.\d+\.xip\.io$/, /[0-9a-z]{1,7}\.xip\.io$/
 
-    # Runtime support files live in `~/Library/Application Support/josh`.
-    @supportRoot = libraryPath ""
-
     # `JOSH_HOST_ROOT`: path to the directory containing symlinks to
     # applications that will be served by josh. Defaults to
     # `~/Library/Application Support/josh/Hosts`.
-    @hostRoot   = env.JOSH_HOST_ROOT   ? path.join @supportRoot, "hosts"
+    @hostRoot   = env.JOSH_HOST_ROOT   ? @config["hosts directory"] ? "/var/lib/josh"
 
     # `JOSH_LOG_ROOT`: path to the directory that josh will use to store
     # its log files. Defaults to `~/Library/Logs/josh`.
-    @logRoot    = env.JOSH_LOG_ROOT    ? logPath ""
+    @logRoot    = env.JOSH_LOG_ROOT    ? @config["log directory"] ? "/tmp/josh-log"
 
     # `JOSH_RVM_PATH` (**deprecated**): path to the rvm initialization
     # script. Defaults to `~/.rvm/scripts/rvm`.
@@ -142,6 +159,11 @@ module.exports = class Configuration
     result[key] = @[key] for key in @constructor.optionNames
     result
 
+  # Special logger that also outputs to STDOUT
+  serverLogger: ->
+    # instance variable can not have same name as instance function or it will return itself.
+    @_serverLogger ?= new Logger path.join(@logRoot, "server.log"), null, true
+
   # Retrieve a `Logger` instance with the given `name`.
   getLogger: (name) ->
     @loggers[name] ||= new Logger path.join @logRoot, name + ".log"
@@ -150,10 +172,10 @@ module.exports = class Configuration
   # removing the `~/Library/Application
   # Support/josh/.disableRvmDeprecationNotices` file.
   disableRvmDeprecationNotices: ->
-    fs.writeFile path.join(@supportRoot, ".disableRvmDeprecationNotices"), ""
+    fs.writeFile path.join(@hostRoot, ".disableRvmDeprecationNotices"), ""
 
   enableRvmDeprecationNotices: ->
-    fs.unlink path.join @supportRoot, ".disableRvmDeprecationNotices"
+    fs.unlink path.join @hostRoot, ".disableRvmDeprecationNotices"
 
   # Search `hostRoot` for files, symlinks or directories matching the
   # domain specified by `host`. If a match is found, the matching domain
@@ -218,14 +240,6 @@ module.exports = class Configuration
               next()
         , (err) ->
           callback err, hosts
-
-# Convenience wrapper for constructing paths to subdirectories of
-# `/var/lib/josh`.
-libraryPath = (args...) ->
-  path.join "/var", "lib", "josh", args...
-
-logPath = (args...)->
-  path.join "/var", "log", "josh", args...
 
 # Strip a trailing `domain` from the given `host`, then generate a
 # sorted array of possible entry names for finding which application

@@ -27,7 +27,8 @@ command -v cake >/dev/null 2>&1 || PATH=`npm root`/.bin:$PATH
 cake build
 
 mkdir -p "$TMP_ROOT/node_modules"
-cp -R package.json bin lib libexec "$TMP_ROOT"
+cp -R package.json bin lib libexec adapters "$TMP_ROOT"
 cp Cakefile "$TMP_ROOT"
 cd "$TMP_ROOT"
 BUNDLE_ONLY=1 npm install --production &>/dev/null
+cd -

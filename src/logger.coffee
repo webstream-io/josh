@@ -16,7 +16,8 @@ module.exports = class Logger
 
   # Create a `Logger` that writes to the file at the given path and
   # log level. The logger begins life in the uninitialized state.
-  constructor: (@path, @level = "debug") ->
+  # Additionally it can also print the log to STDOUT along with log file
+  constructor: (@path, @level = "debug", @pipeToStdout = false) ->
     @readyCallbacks = []
 
   # Invoke `callback` if the logger's state is ready. Otherwise, queue
@@ -31,14 +32,14 @@ module.exports = class Logger
         @state = "initializing"
         # Make the log file's directory if it doesn't already
         # exist. Reset the logger's state if an error is thrown.
-        mkdirp dirname(@path), (err) =>
+        mkdirp dirname(@path), 0o777, (err) =>
           if err
             @state = null
           else
             # Open a write stream for the log file and create the
             # underlying `Log` instance. Then set the logger state to
             # ready and invoke all queued callbacks.
-            @stream = fs.createWriteStream @path, flags: "a"
+            @stream = fs.createWriteStream @path, flags: "a", mode: 0o666
             @stream.on "open", =>
               @log = new Log @level, @stream
               @state = "ready"
@@ -51,3 +52,6 @@ module.exports = class Logger
 for level in Logger.LEVELS then do (level) ->
   Logger::[level] = (args...) ->
     @ready -> @log[level].apply @log, args
+    if @pipeToStdout
+      @stdout ?= new Log @level
+      @ready -> @stdout[level].apply @stdout, args
