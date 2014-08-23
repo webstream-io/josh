@@ -88,12 +88,12 @@ module.exports = class RackApplication
 
     @statCallbacks.push callback
 
-  # Collect environment variables from `.powrc` and `.powenv`, in that
-  # order, if present. The idea is that `.powrc` files can be checked
+  # Collect environment variables from `.joshrc` and `.joshenv`, in that
+  # order, if present. The idea is that `.joshrc` files can be checked
   # into a source code repository for global configuration, leaving
-  # `.powenv` free for any necessary local overrides.
+  # `.joshenv` free for any necessary local overrides.
   loadScriptEnvironment: (env, callback) ->
-    async.reduce [".joshenv"], env, (env, filename, callback) =>
+    async.reduce [".joshrc", ".joshenv"], env, (env, filename, callback) =>
       fs.exists script = join(@root, filename), (scriptExists) ->
         if scriptExists
           sourceScriptEnv script, env, callback

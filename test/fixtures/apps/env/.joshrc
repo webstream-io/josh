@@ -1,0 +1,3 @@
+-#!/bin/sh
+export JOSH_TEST="Hello josh"
+export JOSH_TEST2="This should be overridden by .joshenv"

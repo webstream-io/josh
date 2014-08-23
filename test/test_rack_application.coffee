@@ -149,8 +149,8 @@ module.exports = testCase
     serveApp "apps/env", (request, done) ->
       request "GET", "/", (body) ->
         env = JSON.parse body
-        test.same "Hello Pow", env.JOSH_TEST
-        test.same "Overridden by .powenv", env.JOSH_TEST2
+        test.same "Hello josh", env.JOSH_TEST
+        test.same "Overridden by .joshenv", env.JOSH_TEST2
         test.same "Hello!", env.JOSH_TEST3
         done -> test.done()
 
