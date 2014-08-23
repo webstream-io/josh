@@ -20,7 +20,7 @@ Web server interfaces are supported in josh using `adapters`. Adapters currently
 
 * `ruby_rack` - implements `Rack` interface which serves pretty much all Ruby frameworks (including Ruby on Rails).
 
-Support for more interfaces is planned.
+Support for more interfaces & languages is planned.
 
 ### Supported platforms
 
