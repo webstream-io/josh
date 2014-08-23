@@ -80,9 +80,9 @@ task 'test', 'Run the Pow test suite', ->
 
         {reporters} = require 'nodeunit'
         process.chdir __dirname
-        reporters.default.run ['test']
-        process.chdir "#{__dirname}/adapters/ruby_rack"
-        reporters.default.run ['test']
+        reporters.default.run ['test'], null, ->
+          process.chdir "#{__dirname}/adapters/ruby_rack"
+          reporters.default.run ['test']
 
 task 'install', 'Install pow configuration files', ->
   sh = (command, callback) ->

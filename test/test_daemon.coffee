@@ -54,4 +54,11 @@ module.exports = testCase
         daemon.stop()
         test.done()
 
-    touch restartFilename
+    # Because of identifyUidAndGid() method being called within start(), it is delaying
+    # the `start` event in daemon which assigns `@watcher`, causing `@watcher` to be
+    # assigned _after_ following touch call is completed.
+    # 
+    # So, delay the touch by a few milliseconds
+    setTimeout ->
+      touch restartFilename
+    , 100

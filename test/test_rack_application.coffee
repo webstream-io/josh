@@ -169,7 +169,7 @@ module.exports = testCase
   "custom worker/timeout values are loaded": (test) ->
     serveApp "apps/env", (request, done) ->
       request "GET", "/", (body) ->
-        test.same @application.pool.processOptions.idle, 900 * 1000
+        test.same @application.pool.processOptions.idle, 960 * 1000
         test.same @application.pool.workers.length, 1
         powenv1 = fixturePath("apps/env/.joshenv")
         powenv2 = fixturePath("apps/env/.joshenv2")
