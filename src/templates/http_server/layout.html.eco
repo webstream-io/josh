@@ -104,10 +104,8 @@
   <div class="page">
     <%= @yieldContents() %>
     <ul>
-      <li><a href="http://pow.cx/manual">Pow User&rsquo;s Manual</a></li>
-      <li><a href="https://github.com/37signals/pow/wiki/Troubleshooting">Troubleshooting</a></li>
-      <li><a href="https://github.com/37signals/pow/wiki/FAQ">Frequently Asked Questions</a></li>
-      <li><a href="https://github.com/37signals/pow/issues">Issue Tracker</a></li>
+      <li><a href="https://github.com/webstream-io/josh">josh</a></li>
+      <li><a href="https://github.com/webstream-io/josh/issues">Issue Tracker</a></li>
     </ul>
   </div>
 </body>
