@@ -92,14 +92,21 @@ module.exports = class RackApplication
   # order, if present. The idea is that `.joshrc` files can be checked
   # into a source code repository for global configuration, leaving
   # `.joshenv` free for any necessary local overrides.
+  #
+  # Also cd to the directory without reading any script file and get the env
+  # allowing rvm to detect ruby & gemset and add them to PATH
   loadScriptEnvironment: (env, callback) ->
-    async.reduce [".joshrc", ".joshenv"], env, (env, filename, callback) =>
-      fs.exists script = join(@root, filename), (scriptExists) ->
-        if scriptExists
-          sourceScriptEnv script, env, callback
-        else
-          callback null, env
-    , callback
+    sourceScriptEnv null, env, { cwd: @root }, (err, env) =>
+      if err
+        callback?(err)
+      else
+        async.reduce [".joshrc", ".joshenv"], env, (env, filename, callback) =>
+          fs.exists script = join(@root, filename), (scriptExists) ->
+            if scriptExists
+              sourceScriptEnv script, env, callback
+            else
+              callback null, env
+        , callback
 
   # If `.rvmrc` and `$HOME/.rvm/scripts/rvm` are present, load rvm,
   # source `.rvmrc`, and invoke `callback` with the resulting

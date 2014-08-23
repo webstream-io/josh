@@ -136,45 +136,30 @@ exports.sourceScriptEnv = (script, env, options, callback) ->
   # option, if any. Then source the given script, swallowing any
   # output written to stderr. Finally, dump the current environment to
   # a temporary file.
-  cwd = path.dirname script
-  # Execute the script within context of project's owner, so that we can fetch user
-  # specific env, guess it if not already provided
-  exec ["find", cwd, "-maxdepth", "0" , "-printf", "%u"], (err, stdout, stderr) ->
+  cwd = options.cwd ? path.dirname script
+  filename = makeTemporaryFilename()
+  source_command = if script then "source #{quote script}" else "true"
+  command = """
+    #{options.before ? "true"} &&
+    cd #{quote cwd} &&
+    #{source_command} > /dev/null &&
+    env > #{quote filename}
+  """
+
+  # Run our command through Bash in the directory of the script. If an
+  # error occurs, rewrite the error to a more descriptive
+  # message. Otherwise, read and parse the environment from the
+  # temporary file and pass it along to the callback.
+  exec ["bash", "-lc", command], {cwd, env}, (err, stdout, stderr) ->
     if err
       err.message = "'#{script}' failed to load:\n#{command}"
       err.stdout = stdout
       err.stderr = stderr
       callback err
-    else
-      options.user ?= stdout
-      filename = makeTemporaryFilename()
-      # su -l resets the pwd to ~, so issue a `cd cwd` before source'ing
-      command = """
-        #{options.before ? "true"} &&
-      cd #{quote cwd} &&
-      source #{quote script} > /dev/null &&
-        env > #{quote filename}
-      """
+    else readAndUnlink filename, (err, result) ->
+      if err then callback err
+      else callback null, parseEnv result
 
-      su_command = ["su", "-l", options.user, "-c", command]
-
-      # tests shouldn't require root access
-      if fs.statSync(cwd).uid == process.getuid()
-        su_command = ["bash", "-c", command]
-
-      # Run our command through Bash in the directory of the script. If an
-      # error occurs, rewrite the error to a more descriptive
-      # message. Otherwise, read and parse the environment from the
-      # temporary file and pass it along to the callback.
-      exec su_command, {cwd, env}, (err, stdout, stderr) ->
-        if err
-          err.message = "'#{script}' failed to load:\n#{command}"
-          err.stdout = stdout
-          err.stderr = stderr
-          callback err
-        else readAndUnlink filename, (err, result) ->
-          if err then callback err
-          else callback null, parseEnv result
 
 # Get the user's login environment by spawning a login shell and
 # collecting its environment variables via the `env` command. (In case
