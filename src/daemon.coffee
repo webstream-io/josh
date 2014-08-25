@@ -6,7 +6,7 @@ HttpServer          = require "./http_server"
 DnsServer           = require "./dns_server"
 fs                  = require "fs"
 path                = require "path"
-{identifyUidAndGid} = require "./util"
+{identifyUidAndGid, getRunAsUserEnv} = require "./util"
 
 module.exports = class Daemon extends EventEmitter
   # Create a new `Daemon` with the given `Configuration` instance.
@@ -121,11 +121,14 @@ module.exports = class Daemon extends EventEmitter
   dropPrivileges: ->
     try
       # only setuid if we are root
-      if process.getuid() == 0
-        if @configuration.runAsGroup
-          process.setgid(@configuration.runAsGroup)
-        if @configuration.runAsUser
-          process.setuid(@configuration.runAsUser)
+      if process.getuid() == 0 && @configuration.runAsUser
+        getRunAsUserEnv @configuration.runAsUser, @configuration.env, (err, env) =>
+          if err
+            serverLogger.error err
+          else
+            @configuration.env = env
+            process.setgid(@configuration.runAsGroup)
+            process.setuid(@configuration.runAsUser)
       identifyUidAndGid null, null, (err, user, group, uid, gid) ->
         if err
           serverLogger.error err

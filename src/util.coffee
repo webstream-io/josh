@@ -160,6 +160,21 @@ exports.sourceScriptEnv = (script, env, options, callback) ->
       if err then callback err
       else callback null, parseEnv result
 
+# Before dropping privileges, login through su to get the env to
+# correctly set env.HOME and env.USER
+#
+# TODO: Remove current getUserEnv function and rename this to getUserEnv
+exports.getRunAsUserEnv = (user, env, callback) ->
+  return callback?(null, env) unless process.getuid() == 0
+  command = ["su", "-l", user, "-c", "env"]
+  exec command, {env}, (err, stdout, stderr) ->
+    if err
+      err.message = "Command failed: #{command}\n#{err.message}"
+      err.stdout = stdout
+      err.stderr = stderr
+      callback err
+    else
+      callback null, parseEnv stdout
 
 # Get the user's login environment by spawning a login shell and
 # collecting its environment variables via the `env` command. (In case
