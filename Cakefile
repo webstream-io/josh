@@ -7,7 +7,7 @@ brewCoffee = (watch, dest, src, callback) ->
   if typeof watch is 'function'
     callback = watch
     watch = false
-  options = ['-c', '-o', dest, src]
+  options = ['-c', '-m', '-o', dest, src]
   options.unshift '-w' if watch
 
   coffee = spawn 'node_modules/.bin/coffee', options
@@ -75,14 +75,26 @@ task 'test', 'Run the Pow test suite', ->
   build ->
     buildTemplates ->
       buildAdapters ->
-        process.env["RUBYOPT"]  = "-rubygems"
         process.env["NODE_ENV"] = "test"
+
+        # Because nodeunit isn't printing the error otherwise
+        process.on 'uncaughtException', (err) ->
+          throw err
 
         {reporters} = require 'nodeunit'
         process.chdir __dirname
-        reporters.default.run ['test'], null, ->
-          process.chdir "#{__dirname}/adapters/ruby_rack"
-          reporters.default.run ['test']
+        reporters.default.run ['test'], null
+
+task 'adapter-test', "Test all the adapters", ->
+  build ->
+    buildTemplates ->
+      buildAdapters ->
+        child = spawn "./adapter-make", ["test"], stdio: "inherit", cwd: "#{__dirname}/adapters/ruby_rack"
+        child.on "exit", (code) ->
+          throw "Error #{code}: Tests failed for ruby_rack" unless code == 0
+          child = spawn "./adapter-make", ["test"], stdio: "inherit", cwd: "#{__dirname}/adapters/python_wsgi"
+          child.on "exit", (code) ->
+            throw "Error #{code}: Tests failed for python_wsgi" unless code == 0
 
 task 'install', 'Install pow configuration files', ->
   sh = (command, callback) ->

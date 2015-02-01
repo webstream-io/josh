@@ -10,9 +10,6 @@ fs                  = require 'fs'
 
 exists = fs.exists ? require('path').exists
 
-packageLib = fs.realpathSync __dirname
-packageBin = fs.realpathSync "#{__dirname}/../bin"
-
 # **Process** manages a single Ruby worker process.
 #
 # A Process requires a path to a rackup config file _(config.ru)_.
@@ -71,6 +68,7 @@ exports.Process = class Process extends EventEmitter
     @id = Math.floor Math.random() * 1000
 
     options ?= {}
+    @adapter = options.adapter ? "ruby_rack"
     @runOnce = options.runOnce ? false
     @idle    = options.idle
     @cwd     = options.cwd ? dirname(@config)
@@ -127,8 +125,8 @@ exports.Process = class Process extends EventEmitter
     for key, value of @env
       env[key] = value
 
+    packageBin = fs.realpathSync "#{__dirname}/../adapters/#{@adapter}/bin"
     env['PATH']    = "#{packageBin}:#{env['PATH']}"
-    env['RUBYLIB'] = "#{packageLib}:#{env['RUBYLIB']}"
 
     @heartbeat = new Stream
 
@@ -162,7 +160,7 @@ exports.Process = class Process extends EventEmitter
       else if err
         @_handleError err
 
-    @child = spawn "josh-adapter-ruby_rack-worker", [@config, @sockPath],
+    @child = spawn "josh-adapter-#{@adapter}-worker", [@config, @sockPath],
       cwd: @cwd
       env: env
 

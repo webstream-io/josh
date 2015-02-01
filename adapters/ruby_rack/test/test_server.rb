@@ -21,6 +21,7 @@ class TestNackWorker < MiniTest::Unit::TestCase
     end
 
     until File.exist?(sock); end
+    sleep(0.2)
     self.heartbeat = UNIXSocket.open(sock)
   end
 
@@ -164,5 +165,14 @@ class TestNackWorker < MiniTest::Unit::TestCase
     assert error
     assert_equal "RuntimeError", error['name']
     assert_equal "b00m", error['message']
+  end
+
+  def test_invalid_rack_path
+    spawn :non_existent
+    error = JSON.parse(heartbeat.read)
+
+    assert error
+    assert_equal "Errno::ENOENT", error["name"]
+    assert(error["message"] =~ /No such file or directory/)
   end
 end

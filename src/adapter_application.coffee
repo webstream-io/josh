@@ -1,7 +1,7 @@
-# The `RackApplication` class is responsible for managing a
+# The `AdapterApplication` class is responsible for managing a
 # [Nack](http://josh.github.com/nack/) pool for a given Rack
 # application. Incoming HTTP requests are dispatched to
-# `RackApplication` instances by an `HttpServer`, where they are
+# `AdapterApplication` instances by an `HttpServer`, where they are
 # subsequently handled by a pool of Nack worker processes. By default,
 # Pow tells Nack to use a maximum of two worker processes per
 # application, but this can be overridden with the configuration's
@@ -26,16 +26,20 @@
 
 async = require "async"
 fs    = require "fs"
-nack  = require "../adapters/ruby_rack"
+{createPool} = require './pool'
 
 {bufferLines, pause, sourceScriptEnv} = require "./util"
 {join, basename, resolve} = require "path"
 
-module.exports = class RackApplication
-  # Create a `RackApplication` for the given configuration and
+module.exports = class AdapterApplication
+  @configFiles = 
+    "ruby_rack": "config.ru",
+    "python_wsgi": "wsgi.py"
+
+  # Create a `AdapterApplication` for the given configuration and
   # root path. The application begins life in the uninitialized
   # state.
-  constructor: (@configuration, @root, @firstHost) ->
+  constructor: (@configuration, @root, @adapter, @firstHost) ->
     @logger = @configuration.getLogger join "apps", basename @root
     @readyCallbacks = []
     @quitCallbacks  = []
@@ -166,11 +170,10 @@ module.exports = class RackApplication
       # pool instance using the `workers` and `timeout` options from
       # the application's environment or the global configuration.
       else
-        @logger.debug "Loaded env"
-        @logger.debug env
         @state = "ready"
 
-        @pool = nack.createPool join(@root, "config.ru"),
+        @pool = createPool join(@root, AdapterApplication.configFiles[@adapter]),
+          adapter: @adapter
           env:  env
           size: env?.JOSH_WORKERS ? @configuration.workers
           idle: (env?.JOSH_TIMEOUT ? @configuration.timeout) * 1000

@@ -4,8 +4,11 @@ node_js:
 install:
   - "npm install"
   - "gem install rack"
+  - "sudo apt-get install -qq python3-pip"
+  - "sudo pip3 install Django"
 before_script:
   - "ruby --version"
+  - "python3 --version"
 script:
-  - "npm test"
-  - "cd adapters/ruby_rack; rake test"
+  - "npm run-script test"
+  - "npm run-script adapter-test"

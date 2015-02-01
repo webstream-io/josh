@@ -10,9 +10,10 @@ fs              = require "fs"
 url             = require "url"
 connect         = require "connect"
 request         = require "request"
-RackApplication = require "./rack_application"
+async           = require "async"
+AdapterApplication = require "./adapter_application"
 
-{pause} = require "./util"
+{pause, sourceScriptEnv} = require "./util"
 {dirname, join} = require "path"
 
 {version} = JSON.parse fs.readFileSync __dirname + "/../package.json", "utf8"
@@ -54,7 +55,7 @@ module.exports = class HttpServer extends connect.HTTPServer
       o @handlePowRequest
       o @findHostConfiguration
       o @handleStaticRequest
-      o @findRackApplication
+      o @findAdapterApplication
       o @handleProxyRequest
       o @handleRvmDeprecationRequest
       o @handleApplicationRequest
@@ -62,18 +63,17 @@ module.exports = class HttpServer extends connect.HTTPServer
       o @handleFaviconRequest
       o @handleApplicationNotFound
       o @handleWelcomeRequest
-      o @handleRailsAppWithoutRackupFile
       o @handleLocationNotFound
     ]
 
     @staticHandlers = {}
-    @rackApplications = {}
+    @adapterApplications = {}
     @requestCount = 0
 
     @accessLog = @configuration.getLogger "access"
 
     @on "close", =>
-      for root, application of @rackApplications
+      for root, application of @adapterApplications
         application.quit()
 
   # Gets an object describing the server's current status that can be
@@ -160,27 +160,67 @@ module.exports = class HttpServer extends connect.HTTPServer
     handler = @staticHandlers[root] ?= connect.static(join(root, "public"), redirect: false)
     handler req, res, next
 
+  # use JOSH_ADAPTER if defined in one of the scripts
+  detectAdapterInScript: (env, root, callback) ->
+    async.reduce [".joshrc", ".joshenv"], env, (env, filename, callback) =>
+      fs.exists script = join(root, filename), (scriptExists) ->
+        if scriptExists
+          sourceScriptEnv script, env, callback
+        else
+          callback null, env
+    , callback
+
+  # Detect which adapter the application is using
+  # by probing for config file type
+  detectAdapterByProbing: (root, callback) ->
+    cf = AdapterApplication.configFiles
+    fs.exists join(root, cf["ruby_rack"]), (rackConfigExists) =>
+      if rackConfigExists
+        callback null, "ruby_rack"
+      else
+        fs.exists join(root, cf["python_wsgi"]), (wsgiConfigExists) =>
+          if wsgiConfigExists
+            callback null, "python_wsgi"
+          else
+            # default
+            callback null, null
+
+  # Detect which adapter the application is using
+  # If JOSH_ADAPTER is specified, use it or detect
+  # by probing config file type
+  detectAdapter: (env, root, callback) =>
+    @detectAdapterInScript env, root, (err, env) =>
+      if err then callback err
+      else
+      if env.JOSH_ADAPTER
+        callback null, env.JOSH_ADAPTER
+      else
+        @detectAdapterByProbing root, (err, adapter) =>
+          callback err, adapter
+
   # Check to see if the application root contains a `config.ru`
-  # file. If it does, find the existing `RackApplication` instance for
+  # file. If it does, find the existing `AdapterApplication` instance for
   # the root, or create and cache a new one. Then annotate the request
   # object with the application so it can be handled by
   # `handleApplicationRequest`.
-  findRackApplication: (req, res, next) =>
+  findAdapterApplication: (req, res, next) =>
     return next() unless root = req.pow.root
 
-    fs.exists join(root, "config.ru"), (rackConfigExists) =>
-      if rackConfigExists
-        req.pow.application = @rackApplications[root] ?=
-          new RackApplication @configuration, root, req.pow.host
+    @detectAdapter @configuration.env, root, (err, adapter) =>
+      if err then next err
+      else
+        if adapter
+          req.pow.application = @adapterApplications[root] ?=
+            new AdapterApplication @configuration, root, adapter, req.pow.host
 
-      # If `config.ru` isn't present but there's an existing
-      # `RackApplication` for the root, terminate the application and
-      # remove it from the cache.
-      else if application = @rackApplications[root]
-        delete @rackApplications[root]
-        application.quit()
+        # If `config.ru` isn't present but there's an existing
+        # `AdapterApplication` for the root, terminate the application and
+        # remove it from the cache.
+        else if application = @adapterApplications[root]
+          delete @adapterApplications[root]
+          application.quit()
 
-      next()
+        next()
 
   # If the request object is annotated with a url, proxy the
   # request off to the hostname and port.
@@ -216,7 +256,7 @@ module.exports = class HttpServer extends connect.HTTPServer
   # Handle requests for the mini-app that serves RVM deprecation
   # notices. Manually requesting `/__pow__/rvm_deprecation` on any
   # Rack app will show the notice. The notice is automatically
-  # displayed in a separate browser window by `RackApplication` the
+  # displayed in a separate browser window by `AdapterApplication` the
   # first time you load an app with an `.rvmrc` file.
   handleRvmDeprecationRequest: (req, res, next) =>
     return next() unless application = req.pow.application
@@ -237,7 +277,7 @@ module.exports = class HttpServer extends connect.HTTPServer
         else
           return next()
       renderResponse res, 200, "rvm_deprecation_notice",
-        boilerplate: RackApplication.rvmBoilerplate
+        boilerplate: AdapterApplication.rvmBoilerplate
     else
       next()
 
@@ -280,14 +320,6 @@ module.exports = class HttpServer extends connect.HTTPServer
     {domains} = @configuration
     domain = if "dev" in domains then "dev" else domains[0]
     renderResponse res, 200, "welcome", {version, domain}
-
-  # If the request is for an app that looks like a Rails 2 app but
-  # doesn't have a `config.ru` file, show a more helpful message.
-  handleRailsAppWithoutRackupFile: (req, res, next) ->
-    return next() unless root = req.pow.root
-    fs.exists join(root, "config/environment.rb"), (looksLikeRailsApp) ->
-      return next() unless looksLikeRailsApp
-      renderResponse res, 503, "rackup_file_missing"
 
   # If the request ends up here, it's for a static site, but the
   # requested file doesn't exist. Show a basic 404 message.

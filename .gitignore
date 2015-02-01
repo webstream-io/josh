@@ -5,3 +5,4 @@
 !/node_modules/dnsserver
 /lib
 /ext/nss_josh.o
+npm-debug.log

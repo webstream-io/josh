@@ -5,10 +5,6 @@ http   = require "http"
 
 {Configuration} = require "../.."
 
-# Because nodeunit isn't printing the error otherwise
-process.on 'uncaughtException', (err) ->
-  throw err
-
 exports.merge = merge = (objects...) ->
   result = {}
   for object in objects

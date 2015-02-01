@@ -26,6 +26,7 @@
 , "scripts": {
     "pretest": "cake pretest"
   , "test": "cake test"
+  , "adapter-test": "cake adapter-test"
   , "start": "cake start"
   , "stop": "cake stop"
   }
