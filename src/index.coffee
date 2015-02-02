@@ -31,9 +31,18 @@ module.exports =
   # happens during a Pow daemon's lifecycle.
   Logger:          require "./logger"
 
-  # [RackApplication](rack_application.html) represents a single
+  # [AdapterApplication](adapter_application.html) represents a single
   # running application.
-  RackApplication: require "./rack_application"
+  AdapterApplication: require "./adapter_application"
 
   # The [util](util.html) module contains various helper functions.
   util:            require "./util"
+
+# TODO: copied from adapters/ruby_rack/src/index.coffee, integrate this with above object
+{createConnection} = require './client'
+{createPool}       = require './pool'
+{createProcess}    = require './process'
+
+module.exports.createConnection = createConnection
+module.exports.createPool       = createPool
+module.exports.createProcess    = createProcess

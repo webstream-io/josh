@@ -3,7 +3,7 @@ http            = require "http"
 async           = require "async"
 {testCase}      = require "nodeunit"
 
-{prepareFixtures, fixturePath, createConfiguration, swap, serve} = require "./lib/test_helper"
+{prepareFixtures, fixturePath, createConfiguration, swap, serve, touch} = require "./lib/test_helper"
 
 serveRoot = (root, options, callback) ->
   unless callback
@@ -238,14 +238,6 @@ module.exports = testCase
             test.same "", body
             done proceed
     ], test.done
-
-  "shows a warning for a Rails app without config.ru": (test) ->
-    test.expect 2
-    serveRoot "apps", (request, done) ->
-      request "GET", "/", host: "rails.dev", (body, response) ->
-        test.same 503, response.statusCode
-        test.same "rackup_file_missing", response.headers["x-pow-template"]
-        done -> test.done()
 
   "http://pow/config.json": (test) ->
     test.expect 2

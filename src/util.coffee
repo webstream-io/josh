@@ -7,6 +7,16 @@ async      = require "async"
 {execFile, exec: cpExec} = require "child_process"
 {Stream}   = require "stream"
 
+# TODO: Remove this
+if process.env.NODE_DEBUG and /nack/.test process.env.NODE_DEBUG
+  debug = exports.debug = (args...) -> console.error 'NACK:', args...
+else
+  debug = exports.debug = ->
+
+# Is the given value a function?
+exports.isFunction = (obj) ->
+  if obj and obj.constructor and obj.call and obj.apply then true else false
+
 # The `LineBuffer` class is a `Stream` that emits a `data` event for
 # each line in the stream.
 exports.LineBuffer = class LineBuffer extends Stream
@@ -39,6 +49,73 @@ exports.LineBuffer = class LineBuffer extends Stream
       @write args...
     @emit 'data', @_buffer if @_buffer.length
     @emit 'end'
+
+class exports.BufferedPipe extends Stream
+  constructor: ->
+    @writable = true
+    @readable = true
+
+    @_queue = []
+    @_ended = false
+
+  write: (chunk, encoding) ->
+    if @_queue
+      debug "queueing #{chunk.length} bytes"
+      @_queue.push [chunk, encoding]
+    else
+      debug "writing #{chunk.length} bytes"
+      @emit 'data', chunk, encoding
+
+    return
+
+  end: (chunk, encoding) ->
+    if chunk
+      @write chunk, encoding
+
+    if @_queue
+      @_ended = true
+    else
+      debug "closing connection"
+      @emit 'end'
+
+    return
+
+  destroy: ->
+    @writable = false
+
+  flush: ->
+    return unless @_queue
+
+    while @_queue and @_queue.length
+      [chunk, encoding] = @_queue.shift()
+      debug "writing #{chunk.length} bytes"
+      @emit 'data', chunk, encoding
+
+    if @_ended
+      debug "closing connection"
+      @emit 'end'
+
+    @_queue = null
+
+    return
+
+class exports.BufferedRequest extends exports.BufferedPipe
+  constructor: (@method, @url, @headers = {}, @proxyMetaVariables = {}) ->
+    super
+
+    # If another HttpRequest pipe is started, copy over its meta variables
+    @once 'pipe', (src) =>
+      @method ?= src.method
+      @url    ?= src.url
+
+      for key, value of src.headers
+        @headers[key] ?= value
+
+      for key, value of src.proxyMetaVariables
+        @proxyMetaVariables[key] ?= value
+
+      @proxyMetaVariables['REMOTE_ADDR'] ?= "#{src.connection?.remoteAddress}"
+      @proxyMetaVariables['REMOTE_PORT'] ?= "#{src.connection?.remotePort}"
 
 # Read lines from `stream` and invoke `callback` on each line.
 exports.bufferLines = (stream, callback) ->

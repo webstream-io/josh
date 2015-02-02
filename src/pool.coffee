@@ -64,6 +64,7 @@ exports.Pool = class Pool extends EventEmitter
     @round = 0
 
     @processOptions =
+      adapter: options.adapter
       runOnce: options.runOnce
       idle:    options.idle
       cwd:     options.cwd

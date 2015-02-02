@@ -3,7 +3,7 @@ connect           = require "connect"
 fs                = require "fs"
 http              = require "http"
 {testCase}        = require "nodeunit"
-{RackApplication} = require ".."
+{AdapterApplication} = require ".."
 
 {prepareFixtures, fixturePath, createConfiguration, touch, swap, serve} = require "./lib/test_helper"
 
@@ -13,7 +13,7 @@ serveApp = (path, callback) ->
     JOSH_RVM_PATH:  fixturePath("fake-rvm")
     JOSH_WORKERS:   1
 
-  @application = new RackApplication configuration, fixturePath(path)
+  @application = new AdapterApplication configuration, fixturePath(path), "ruby_rack"
   server = connect.createServer()
 
   server.use (req, res, next) ->
