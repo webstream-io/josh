@@ -1,0 +1,11 @@
+[Unit]
+Description=josh http server
+After=network.target
+
+[Service]
+RemainAfterExit=yes
+ExecStartPre=bash -c 'killall --quiet --wait "josh [daemon]" || true'
+ExecStart=__JOSH_BIN__
+
+[Install]
+Alias=network.target.wants/systemd-swap.service
